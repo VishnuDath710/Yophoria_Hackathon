@@ -1,10 +1,26 @@
 [
   {
     "role": "user",
-    "content": "i want to do 20 questions on thermodyanmics"
+    "content": "i am very confident in the calculus can you provide me with some questions"
   },
   {
     "role": "assistant",
     "content": "I've identified these tools for you: QuizGenerator."
+  },
+  {
+    "role": "user",
+    "content": "So I'm doubtful in linear algebra give me summary and problems"
+  },
+  {
+    "role": "assistant",
+    "content": "I've identified these tools for you: ConceptExplainer, QuizGenerator."
+  },
+  {
+    "role": "user",
+    "content": "So I'm doubtful in linear algebra give me summary and 15 problems"
+  },
+  {
+    "role": "assistant",
+    "content": "I've identified these tools for you: ConceptExplainer, QuizGenerator."
   }
 ]

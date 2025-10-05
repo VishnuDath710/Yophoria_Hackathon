@@ -5,63 +5,638 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Tutor Orchestrator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
-        .chat-container { max-width: 900px; margin: 2rem auto; }
-        .chat-box { height: 60vh; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.5rem; padding: 1rem; background-color: white; }
-        .chat-message { margin-bottom: 1rem; }
-        .user-message { text-align: right; }
-        .user-message .card-body { background-color: #0d6efd; color: white; border-radius: 15px 15px 0 15px; }
-        .assistant-message .card-body { background-color: #e9ecef; border-radius: 15px 15px 15px 0; }
-        .tool-selection-area { padding: 1rem 0; }
-        .tool-response-area { margin-top: 1rem; }
-        .tool-response-box { background-color: #212529; color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; white-space: pre-wrap; font-family: monospace; }
-        .loading-spinner { display: none; }
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-color: #8b5cf6;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --chat-bg: #ffffff;
+            --user-msg-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --assistant-msg-bg: #f8fafc;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 300px;
+            background: var(--bg-gradient);
+            z-index: -1;
+        }
+
+        .chat-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Header Styles */
+        .header-section {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .header-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header-section p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            border: none;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #64748b;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: var(--primary-color);
+            background-color: #f1f5f9;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: var(--bg-gradient);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Chat Card */
+        .chat-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-xl);
+            border: none;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-card .card-header {
+            background: white;
+            border-bottom: 2px solid #f1f5f9;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-card .card-header span {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chat-card .card-header span i {
+            color: var(--primary-color);
+        }
+
+        .clear-btn {
+            background: transparent;
+            border: 2px solid #fee2e2;
+            color: #dc2626;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .clear-btn:hover {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Chat Box */
+        .chat-box {
+            height: 500px;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            scroll-behavior: smooth;
+        }
+
+        .chat-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-box::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Chat Messages */
+        .chat-message {
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .user-message .message-avatar {
+            background: var(--bg-gradient);
+            color: white;
+        }
+
+        .assistant-message .message-avatar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .message-content {
+            max-width: 70%;
+        }
+
+        .message-bubble {
+            padding: 1rem 1.25rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            word-wrap: break-word;
+            transition: all 0.3s ease;
+        }
+
+        .message-bubble:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .user-message .message-bubble {
+            background: var(--user-msg-bg);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .assistant-message .message-bubble {
+            background: var(--assistant-msg-bg);
+            color: #1e293b;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Input Area */
+        .card-footer {
+            background: white;
+            border-top: 2px solid #f1f5f9;
+            padding: 1.5rem;
+        }
+
+        .input-group {
+            gap: 0.75rem;
+        }
+
+        .form-control {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.875rem 1.25rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+
+        .btn-send {
+            background: var(--bg-gradient);
+            border: none;
+            color: white;
+            padding: 0.875rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-send:active {
+            transform: translateY(0);
+        }
+
+        /* Tool Selection Area */
+        .tool-selection-area {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            text-align: center;
+        }
+
+        .loading-spinner {
+            display: none;
+            color: var(--primary-color);
+        }
+
+        /* Loading Message Indicator */
+        .loading-message {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        .loading-message .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            font-size: 1.2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .loading-message .message-bubble {
+            padding: 1rem 1.25rem;
+            border-radius: 16px;
+            background: var(--assistant-msg-bg);
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 0.35rem;
+            align-items: center;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            animation: typing 1.4s infinite;
+            opacity: 0.4;
+        }
+
+        .typing-indicator span:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        /* Send Button Loading State */
+        .btn-send:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn-send .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 2px;
+        }
+
+        /* Tool Response Area */
+        .tool-response-area {
+            margin-top: 1.5rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            padding: 1.5rem;
+            display: none;
+        }
+
+        .tool-response-area h5 {
+            color: #1e293b;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tool-response-area h5 i {
+            color: var(--primary-color);
+        }
+
+        .tool-response-box {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            white-space: pre-wrap;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .tool-response-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .tool-response-box::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+
+        .tool-response-box::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-section h1 {
+                font-size: 1.75rem;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .btn-send {
+                padding: 0.875rem 1.5rem;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h4 {
+            color: #475569;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #94a3b8;
+        }
     </style>
 </head>
 <body>
     <div class="container chat-container">
-        <h1 class="text-center mb-4">AI Tutor Orchestrator</h1>
+        <!-- Header -->
+        <div class="header-section">
+            <h1><i class="fas fa-graduation-cap"></i> AI Tutor Orchestrator</h1>
+            <p>Your intelligent learning companion</p>
+        </div>
         
         <!-- Navigation -->
-        <ul class="nav nav-tabs mb-3">
-            <li class="nav-item"><a class="nav-link active" href="/">Chat</a></li>
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link active" href="/">
+                    <i class="fas fa-comments"></i> Chat
+                </a>
+            </li>
         </ul>
         
-        <!-- Chat Box -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Conversation</span>
-                <button id="clear-chat-btn" class="btn btn-sm btn-outline-danger">Clear History</button>
+        <!-- Chat Card -->
+        <div class="card chat-card">
+            <div class="card-header">
+                <span>
+                    <i class="fas fa-message"></i>
+                    Conversation
+                </span>
+                <button id="clear-chat-btn" class="clear-btn">
+                    <i class="fas fa-trash-alt"></i>
+                    Clear History
+                </button>
             </div>
             <div id="chat-box" class="card-body chat-box">
-                <!-- Chat messages will be loaded here -->
+                <!-- Empty State -->
+                <div class="empty-state">
+                    <i class="fas fa-robot"></i>
+                    <h4>Start Your Learning Journey</h4>
+                    <p>Ask me to explain concepts, create flashcards, or help you study!</p>
+                </div>
+                
+                <!-- Loading Indicator Template (hidden by default) -->
+                <template id="loading-template">
+                    <div class="loading-message">
+                        <div class="message-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-bubble">
+                            <div class="typing-indicator">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <span style="margin-left: 0.5rem; color: #64748b;">AI is thinking...</span>
+                        </div>
+                    </div>
+                </template>
             </div>
             <div class="card-footer">
                 <form id="chat-form">
                     <div class="input-group">
                         <input type="text" id="user-input" class="form-control" placeholder="Ask me to explain a concept or make flashcards..." required>
-                        <button type="submit" class="btn btn-primary">Send</button>
+                        <button type="submit" class="btn btn-send" id="send-button">
+                            <span class="button-text">
+                                <i class="fas fa-paper-plane"></i> Send
+                            </span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
 
         <!-- Tool Selection -->
-        <div id="tool-selection-area" class="tool-selection-area text-center">
-             <div class="spinner-border text-primary loading-spinner" role="status">
+        <div id="tool-selection-area" class="tool-selection-area">
+            <div class="spinner-border text-primary loading-spinner" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
             <!-- Tool buttons will be injected here -->
         </div>
 
         <!-- Tool Response -->
-        <div id="tool-response-area" class="tool-response-area" style="display: none;">
-            <h5>Tool API Response:</h5>
+        <div id="tool-response-area" class="tool-response-area">
+            <h5>
+                <i class="fas fa-code"></i>
+                Tool API Response
+            </h5>
             <div id="tool-response-box" class="tool-response-box"></div>
         </div>
     </div>
 
     <script src="/static/js/chat.js"></script>
+    
+    <!-- Helper script for loading indicators -->
+    <script>
+        // Utility functions for showing/hiding loading states
+        window.showLoadingMessage = function() {
+            const chatBox = document.getElementById('chat-box');
+            const template = document.getElementById('loading-template');
+            const loadingMsg = template.content.cloneNode(true);
+            
+            // Remove empty state if it exists
+            const emptyState = chatBox.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            
+            chatBox.appendChild(loadingMsg);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+        
+        window.hideLoadingMessage = function() {
+            const loadingMsg = document.querySelector('.loading-message');
+            if (loadingMsg) {
+                loadingMsg.remove();
+            }
+        };
+        
+        window.toggleSendButton = function(isLoading) {
+            const sendBtn = document.getElementById('send-button');
+            const buttonText = sendBtn.querySelector('.button-text');
+            const spinner = sendBtn.querySelector('.spinner-border-sm');
+            const input = document.getElementById('user-input');
+            
+            if (isLoading) {
+                sendBtn.disabled = true;
+                buttonText.classList.add('d-none');
+                spinner.classList.remove('d-none');
+                input.disabled = true;
+            } else {
+                sendBtn.disabled = false;
+                buttonText.classList.remove('d-none');
+                spinner.classList.add('d-none');
+                input.disabled = false;
+            }
+        };
+        
+        // Example usage: Uncomment to test
+        // document.getElementById('chat-form').addEventListener('submit', function(e) {
+        //     e.preventDefault();
+        //     showLoadingMessage();
+        //     toggleSendButton(true);
+        //     
+        //     // Simulate API call
+        //     setTimeout(() => {
+        //         hideLoadingMessage();
+        //         toggleSendButton(false);
+        //         // Add actual message here
+        //     }, 2000);
+        // });
+    </script>
 </body>
 </html>
