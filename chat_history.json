@@ -1,18 +1,10 @@
 [
   {
     "role": "user",
-    "content": "i want to practice 10 thermodynamics questions if feel confident"
+    "content": "i want to do 20 questions on thermodyanmics"
   },
   {
     "role": "assistant",
-    "content": "I have identified 1 relevant tool(s) for your request."
-  },
-  {
-    "role": "user",
-    "content": "i want summary"
-  },
-  {
-    "role": "assistant",
-    "content": "I have identified 1 relevant tool(s) for your request."
+    "content": "I've identified these tools for you: QuizGenerator."
   }
 ]

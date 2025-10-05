@@ -1,16 +1,18 @@
 from pydantic import BaseModel, Field
-from typing import List, Literal, Optional
+from typing import List, Literal
 
 # --- Common Models ---
 
 class UserInfo(BaseModel):
-    """Consistent User Info object for all tools."""
+    """
+    Represents the student's dynamic profile.
+    This data is now classified and updated after every message.
+    """
     user_id: str = "student123"
     name: str = "Alex"
-    grade_level: str = "10"
-    learning_style_summary: str = "Prefers visual aids and examples"
-    emotional_state_summary: str = "Curious and engaged"
-    mastery_level_summary: str = "Level 5: Developing competence"
+    teaching_style: str
+    emotional_state: str
+    mastery_level: str
 
 class ChatMessage(BaseModel):
     """Represents a single message in the chat history."""
@@ -18,36 +20,33 @@ class ChatMessage(BaseModel):
     content: str
 
 # --- Tool Specific Input Schemas ---
+# (The rest of the file remains the same)
 
 class NoteMakerToolInput(BaseModel):
-    user_info: UserInfo = Field(default_factory=UserInfo)
+    user_info: UserInfo
     chat_history: List[ChatMessage]
-    topic: str = Field(..., description="The main topic for note generation, e.g., 'Water Cycle'")
-    subject: str = Field(..., description="Academic subject area, e.g., 'Environmental Science'")
+    topic: str
+    subject: str
     note_taking_style: Literal["outline", "bullet_points", "narrative", "structured"]
-    include_examples: bool = True
-    include_analogies: bool = False
-
+    
 class FlashcardGeneratorToolInput(BaseModel):
-    user_info: UserInfo = Field(default_factory=UserInfo)
-    topic: str = Field(..., description="The topic for flashcard generation, e.g., 'Photosynthesis'")
-    count: int = Field(..., ge=1, le=20, description="Number of flashcards to generate")
+    user_info: UserInfo
+    topic: str
+    count: int = Field(..., ge=1, le=20)
     difficulty: Literal["easy", "medium", "hard"]
-    subject: str = Field(..., description="Academic subject area, e.g., 'Biology'")
-    include_examples: bool = True
+    subject: str
 
 class ConceptExplainerToolInput(BaseModel):
-    user_info: UserInfo = Field(default_factory=UserInfo)
+    user_info: UserInfo
     chat_history: List[ChatMessage]
-    concept_to_explain: str = Field(..., description="The specific concept to explain, e.g., 'mitosis'")
-    current_topic: str = Field(..., description="Broader topic context, e.g., 'Cell Biology'")
+    concept_to_explain: str
+    current_topic: str
     desired_depth: Literal["basic", "intermediate", "advanced", "comprehensive"]
 
 class QuizGeneratorToolInput(BaseModel):
-    """Schema for a hypothetical Quiz Generator Tool."""
-    user_info: UserInfo = Field(default_factory=UserInfo)
-    topic: str = Field(..., description="The main topic for the quiz")
-    subject: str = Field(..., description="The academic subject of the quiz")
+    user_info: UserInfo
+    topic: str
+    subject: str
     question_count: int = Field(10, ge=5, le=25)
-    difficulty: Literal["beginner", "intermediate", "expert"] = "intermediate"
-    question_types: List[Literal["multiple_choice", "true_false", "short_answer"]] = ["multiple_choice"]
+    difficulty: Literal["beginner", "intermediate", "expert"]
+    question_types: List[Literal["multiple_choice", "true_false", "short_answer"]]
