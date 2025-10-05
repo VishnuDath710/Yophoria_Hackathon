@@ -1,38 +1,65 @@
-# app/tools.py
-from .models import FlashcardGeneratorInput
 import json
+from .schemas import (
+    NoteMakerToolInput, FlashcardGeneratorToolInput,
+    ConceptExplainerToolInput, QuizGeneratorToolInput
+)
 
-def flashcard_generator_tool(input_data: FlashcardGeneratorInput) -> str:
-    """Mock function for the Flashcard Generator Tool."""
-    print(f"--- Calling Flashcard Generator Tool with topic: {input_data.topic} ---")
-    
-    # Simulate adapting to the user's state [cite: 96]
-    adaptation_details = f"Flashcards adapted for a {input_data.user_info.emotional_state_summary.lower()} student at mastery level {input_data.user_info.mastery_level_summary.split(':')[0]}."
-
-    # Mock success response [cite: 395]
-    mock_response = {
-        "flashcards": [
-            {
-                "title": f"Key Term in {input_data.topic}",
-                "question": "What is the primary function of chlorophyll?",
-                "answer": "To absorb light energy for photosynthesis.",
-                "example": "Found in the chloroplasts of plant cells."
-            } for _ in range(input_data.count)
-        ],
-        "topic": input_data.topic,
-        "adaptation_details": adaptation_details,
-        "difficulty": input_data.difficulty
+def execute_note_maker(params: NoteMakerToolInput):
+    """Simulates calling the Note Maker Tool API."""
+    print(f"Executing Note Maker tool for topic: {params.topic}")
+    # In a real scenario, you would make an API call here.
+    response = {
+        "status": 200,
+        "tool": "Note Maker",
+        "title": f"Notes on {params.topic}",
+        "summary": "This is a brief summary of the generated notes...",
+        "note_sections": [{"title": "Key Point 1", "content": "..."}]
     }
+    return json.dumps(response, indent=2)
+
+def execute_flashcard_generator(params: FlashcardGeneratorToolInput):
+    """Simulates calling the Flashcard Generator Tool API."""
+    print(f"Executing Flashcard Generator tool for topic: {params.topic}")
+    response = {
+        "status": 200,
+        "tool": "Flashcard Generator",
+        "flashcards": [{"question": "What is...", "answer": "It is..."} for _ in range(params.count)],
+        "topic": params.topic,
+        "difficulty": params.difficulty
+    }
+    return json.dumps(response, indent=2)
+
+def execute_concept_explainer(params: ConceptExplainerToolInput):
+    """Simulates calling the Concept Explainer Tool API."""
+    print(f"Executing Concept Explainer tool for concept: {params.concept_to_explain}")
+    # Simulate a validation error if the concept is too simple
+    if params.concept_to_explain.lower() == "test":
+        return json.dumps({"status": 400, "error": "Bad Request", "details": "'test' is not a valid concept."}, indent=2)
     
-    return json.dumps(mock_response, indent=2)
+    response = {
+        "status": 200,
+        "tool": "Concept Explainer",
+        "explanation": f"A detailed explanation of {params.concept_to_explain} at a {params.desired_depth} level.",
+        "examples": ["Here is a practical example..."]
+    }
+    return json.dumps(response, indent=2)
 
-def note_maker_tool(input_data: dict) -> str:
-    """Placeholder mock function for the Note Maker Tool."""
-    print(f"--- Calling Note Maker Tool with topic: {input_data.get('topic')} ---")
-    return json.dumps({"status": "success", "notes": "Your notes on the topic are here."})
+def execute_quiz_generator(params: QuizGeneratorToolInput):
+    """Simulates calling the Quiz Generator Tool API."""
+    print(f"Executing Quiz Generator tool for topic: {params.topic}")
+    response = {
+        "status": 200,
+        "tool": "Quiz Generator",
+        "quiz_title": f"{params.topic.capitalize()} Quiz",
+        "question_count": params.question_count,
+        "questions": [{"question_text": "What is the capital of France?", "options": ["Paris", "London"]}]
+    }
+    return json.dumps(response, indent=2)
 
-# A dictionary to easily find tools by name
-available_tools = {
-    "flashcard_generator": flashcard_generator_tool,
-    "note_maker": note_maker_tool,
+# Dictionary mapping tool names to their execution functions and schemas
+AVAILABLE_TOOLS = {
+    "NoteMakerTool": {"function": execute_note_maker, "schema": NoteMakerToolInput},
+    "FlashcardGeneratorTool": {"function": execute_flashcard_generator, "schema": FlashcardGeneratorToolInput},
+    "ConceptExplainerTool": {"function": execute_concept_explainer, "schema": ConceptExplainerToolInput},
+    "QuizGeneratorTool": {"function": execute_quiz_generator, "schema": QuizGeneratorToolInput}
 }

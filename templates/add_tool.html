@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container" style="max-width: 800px; margin: 2rem auto;">
+        <h1 class="text-center mb-4">Add a New Tool</h1>
+
+        <!-- Navigation -->
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><a class="nav-link" href="/">Chat</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/add-tool">Add New Tool</a></li>
+        </ul>
+
+        <div class="card">
+            <div class="card-body">
+                <p class="text-muted text-center">This is a placeholder page to demonstrate the user interface for adding new educational tools to the orchestrator system.</p>
+                <form>
+                    <div class="mb-3">
+                        <label for="toolName" class="form-label">Tool Name</label>
+                        <input type="text" class="form-control" id="toolName" placeholder="e.g., Quiz Generator">
+                    </div>
+                    <div class="mb-3">
+                        <label for="toolApiEndpoint" class="form-label">API Endpoint URL</label>
+                        <input type="url" class="form-control" id="toolApiEndpoint" placeholder="https://api.example.com/quiz">
+                    </div>
+                    <div class="mb-3">
+                        <label for="toolSchema" class="form-label">Tool Input Schema (JSON)</label>
+                        <textarea class="form-control" id="toolSchema" rows="8" placeholder='{ "topic": "string", "count": "integer" }'></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Save Tool</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

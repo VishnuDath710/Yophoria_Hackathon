@@ -1,95 +1,108 @@
-# app/agent.py
 import os
-from typing import TypedDict, Annotated, Sequence
-from langchain_core.messages import BaseMessage
+from typing import TypedDict, List, Literal
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import SystemMessage
+from pydantic import BaseModel, Field # <-- FIX: Changed from langchain_core.pydantic_v1
 from langgraph.graph import StateGraph, END
-from .tools import available_tools
+from .tools import AVAILABLE_TOOLS
 
-# This will be the state of our graph, tracking the conversation
+# Load API key from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
+# --- Agent State ---
 class AgentState(TypedDict):
-    user_message: str
-    user_info: dict
-    tool_name: str
-    tool_parameters: dict
-    tool_output: str
+    userInput: str
+    chatHistory: list
+    userInfo: dict
+    classifiedTools: List[str]
+    extractedParameters: dict
 
-# This is a placeholder for your router.
-# In a real system, an LLM would make this decision.
-def tool_router(state: AgentState) -> Literal["flashcard_generator", "note_maker", END]:
-    """Simple router to decide which tool to use based on keywords."""
-    message = state['user_message'].lower()
-    if "flashcard" in message or "quiz me" in message:
-        return "flashcard_generator"
-    if "note" in message or "summarize" in message:
-        return "note_maker"
-    return END
+# --- LangGraph Nodes ---
 
-# This is a placeholder for parameter extraction.
-# This is the most important part you'll build out with an LLM. [cite: 708]
-def parameter_extractor(state: AgentState) -> AgentState:
+# 1. Tool Classifier Node
+class ToolClassifier(BaseModel):
+    """Select the most relevant tool(s) based on the user's request."""
+    tool_names: List[Literal["NoteMakerTool", "FlashcardGeneratorTool", "ConceptExplainerTool", "QuizGeneratorTool"]] = Field(
+        description="The names of the tools that are most relevant to the user's prompt."
+    )
+
+def classify_tools(state: AgentState):
     """
-    Placeholder for the intelligent parameter extraction engine.
-    For now, it uses simple logic.
+    First node in the graph: Classifies the user's request into one or more tools.
     """
-    print("--- Extracting Parameters ---")
-    message = state['user_message']
+    print("--- 1. CLASSIFYING TOOLS ---")
     
-    # TODO: Replace this with an LLM call using LangChain's tool/function calling
-    # to extract parameters from `message` based on the tool's schema.
-    # For now, we'll hardcode some values for the demo.
+    # FIX: Explicitly pass the API key from the environment variable
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash", 
+        temperature=0, 
+        google_api_key=os.getenv("GEMINI_API_KEY")
+    )
     
-    if state["tool_name"] == "flashcard_generator":
-        params = {
-            "user_info": state["user_info"],
-            "topic": "Photosynthesis", # Inferred from message
-            "count": 5, # Inferred from message
-            "difficulty": "easy", # Inferred from emotional state "confused"
-            "subject": "Biology" # Inferred from topic
-        }
-        state["tool_parameters"] = params
-        
-    # Add logic for other tools here
-    else:
-        state["tool_parameters"] = {}
-
+    structured_llm_classifier = llm.with_structured_output(ToolClassifier)
+    
+    system_prompt = """You are an expert at classifying a user's request into a set of available tools.
+    Based on the user's prompt and chat history, identify the most relevant tool(s) from the provided list."""
+    
+    prompt = f"""
+    Available Tools: {', '.join(AVAILABLE_TOOLS.keys())}
+    Chat History: {state['chatHistory']}
+    User's Latest Prompt: {state['userInput']}
+    """
+    
+    tool_choice_result = structured_llm_classifier.invoke([SystemMessage(content=system_prompt), prompt])
+    
+    print(f"    - Tools Classified: {tool_choice_result.tool_names}")
+    state['classifiedTools'] = tool_choice_result.tool_names
     return state
 
-def tool_executor(state: AgentState) -> AgentState:
-    """Executes the chosen tool with the extracted parameters."""
-    print(f"--- Executing Tool: {state['tool_name']} ---")
-    tool_function = available_tools.get(state["tool_name"])
+# 2. Parameter Extractor Node
+def extract_parameters(state: AgentState):
+    """
+    Second node: Extracts parameters for the classified tools using the tool's Pydantic schema.
+    """
+    print("--- 2. EXTRACTING PARAMETERS ---")
     
-    if tool_function:
-        # Here you would use Pydantic models to validate before calling
-        # For this example, the tool function itself takes the dict
-        # In a robust solution, you'd parse `state["tool_parameters"]` into the correct Pydantic model.
-        output = tool_function(state["tool_parameters"])
-        state["tool_output"] = output
-    else:
-        state["tool_output"] = '{"error": "Tool not found"}'
+    # FIX: Explicitly pass the API key here as well
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash", 
+        temperature=0, 
+        google_api_key=os.getenv("GEMINI_API_KEY")
+    )
+
+    all_extracted_params = {}
+
+    for tool_name in state['classifiedTools']:
+        tool_schema = AVAILABLE_TOOLS[tool_name]["schema"]
+        structured_llm_extractor = llm.with_structured_output(tool_schema)
         
+        system_prompt = f"""You are an expert at extracting information. Your task is to extract parameters for the `{tool_name}` tool based on its schema.
+        You must analyze the user's prompt and the chat history to find the required information.
+        If a value is not found, use a sensible default that aligns with the schema's description.
+        The user's personal information is provided."""
+
+        prompt = f"""
+        User Info: {state['userInfo']}
+        Chat History: {state['chatHistory']}
+        User's Latest Prompt: {state['userInput']}
+        """
+        
+        extracted_data = structured_llm_extractor.invoke([SystemMessage(content=system_prompt), prompt])
+        all_extracted_params[tool_name] = extracted_data.dict()
+        print(f"    - Parameters for {tool_name}: {all_extracted_params[tool_name]}")
+
+    state['extractedParameters'] = all_extracted_params
     return state
 
-
-# Define the graph workflow
+# --- Build the Graph ---
 workflow = StateGraph(AgentState)
 
-workflow.add_node("parameter_extractor", parameter_extractor)
-workflow.add_node("tool_executor", tool_executor)
+workflow.add_node("classify_tools", classify_tools)
+workflow.add_node("extract_parameters", extract_parameters)
 
-# The entry point is the router
-workflow.set_conditional_entry_point(
-    tool_router,
-    {
-        "flashcard_generator": "parameter_extractor",
-        "note_maker": "parameter_extractor", # Add other tools here
-        END: END
-    }
-)
+workflow.set_entry_point("classify_tools")
+workflow.add_edge("classify_tools", "extract_parameters")
+workflow.add_edge("extract_parameters", END)
 
-# After extracting parameters, we always execute the tool
-workflow.add_edge("parameter_extractor", "tool_executor")
-workflow.add_edge("tool_executor", END)
-
-# Compile the graph into a runnable app
 app_graph = workflow.compile()

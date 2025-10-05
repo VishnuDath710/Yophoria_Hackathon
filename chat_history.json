@@ -1,0 +1,18 @@
+[
+  {
+    "role": "user",
+    "content": "i want to practice 10 thermodynamics questions if feel confident"
+  },
+  {
+    "role": "assistant",
+    "content": "I have identified 1 relevant tool(s) for your request."
+  },
+  {
+    "role": "user",
+    "content": "i want summary"
+  },
+  {
+    "role": "assistant",
+    "content": "I have identified 1 relevant tool(s) for your request."
+  }
+]

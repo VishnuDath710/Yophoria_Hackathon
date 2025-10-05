@@ -1,87 +1,64 @@
-# Autonomous AI Tutor Orchestrator
+Autonomous AI Tutor Orchestrator
+This project is an intelligent middleware orchestrator built with FastAPI and LangGraph. It serves as a "brain" between a conversational AI tutor and various educational tools, designed to understand user requests, classify them into the correct tools, extract necessary parameters, and simulate API calls to those tools.
 
-[cite_start]This project is an intelligent middleware orchestrator built for the **Yophoria Innovation Challenge**[cite: 3]. [cite_start]It acts as a "brain" between a conversational AI tutor and various educational tools (like flashcard generators, note makers, etc.)[cite: 14].
+Core Features
+Web Interface: A clean, responsive chat interface built with Bootstrap.
 
-The system is designed to understand a student's request from a natural language conversation, determine the appropriate educational tool, intelligently extract the required parameters, and execute the tool.
+Chat History: Conversation is stored in a static chat_history.json file.
 
-## Core Functionality
+AI-Powered Tool Classification: Uses a LangGraph agent with the Gemini API to identify the most relevant tool(s) for a user's prompt.
 
-* [cite_start]**Context Analysis:** Parses conversation history to identify educational intent[cite: 47].
-* [cite_start]**Intelligent Parameter Extraction:** Extracts entities like topics, subjects, and difficulty levels from the conversation to fill tool requirements[cite: 49].
-* [cite_start]**Tool Orchestration:** Manages API calls to multiple educational tools, handles validation, and processes responses[cite: 54, 55].
-* [cite_start]**Scalable Architecture:** Designed to be extensible for integrating 80+ tools[cite: 24].
+AI-Powered Parameter Extraction: Intelligently extracts parameters for each tool based on its specific schema, the user's prompt, and the conversation history.
 
-## Technology Stack
+Mock Tool Execution: Simulates API calls to the tools and displays the raw JSON response.
 
-* [cite_start]**Backend:** Python 3.10+ with FastAPI [cite: 39]
-* [cite_start]**Agent Framework:** LangGraph and LangChain [cite: 40]
-* **Validation:** Pydantic
+Schema Validation: Uses Pydantic to define and validate the input for each tool.
 
-## Project Structure
+Technology Stack
+Backend: Python, FastAPI
+
+Frontend: HTML, Bootstrap, JavaScript
+
+Agent Framework: LangGraph, LangChain
+
+LLM: Google Gemini Pro
+
+Validation: Pydantic
+
+Project Structure
 autonomous_tutor_orchestrator/
-├── app/
-│   ├── init.py
-│   ├── main.py
-│   ├── models.py
-│   ├── agent.py
-│   └── tools.py
-├── requirements.txt
+├── app/                  # Core application logic
+├── static/               # For CSS/JS files
+├── templates/            # HTML templates
+├── .env                  # For API keys
+├── chat_history.json     # Stores conversation
+├── requirements.txt      # Python dependencies
 └── README.md
 
-## Setup and Installation
+Setup and Installation
+Clone the repository:
 
-1.  **Clone the repository:**
-    ```sh
-    git clone <your-repo-url>
-    cd autonomous_tutor_orchestrator
-    ```
+git clone <your-repo-url>
+cd autonomous_tutor_orchestrator
 
-2.  **Create and activate a virtual environment (recommended):**
-    ```sh
-    # For Windows
-    python -m venv venv
-    .\venv\Scripts\activate
+Create and activate a virtual environment:
 
-    # For macOS/Linux
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
+python -m venv venv
+source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
 
-3.  **Install the required dependencies:**
-    ```sh
-    pip install -r requirements.txt
-    ```
+Install the required dependencies:
 
-## Running the Application
+pip install -r requirements.txt
 
-1.  Start the FastAPI server using Uvicorn:
-    ```sh
-    uvicorn app.main:app --reload
-    ```
-2.  The application will be running at `http://127.0.0.1:8000`.
+Set up your API Key:
 
-## How to Use
+Rename the .env.example file to .env (if you have one) or create a new .env file.
 
-Once the server is running, you can access the interactive API documentation (Swagger UI) by navigating to:
+Add your Google Gemini API key to the .env file:
 
-**`http://127.0.0.1:8000/docs`**
+GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
 
-You can test the `/orchestrate` endpoint directly from the documentation.
+Running the Application
+Start the FastAPI server from the root directory using Uvicorn:
 
-### Example Request Body
-
-Here is an example JSON payload to send to the `/orchestrate` endpoint:
-
-```json
-{
-  "user_message": "I'm confused, can you make some flashcards for me about photosynthesis?",
-  "user_info": {
-    "user_id": "student123",
-    "name": "Alex",
-    "grade_level": "10",
-    "learning_style_summary": "Prefers visual aids and examples",
-    "emotional_state_summary": "Confused but motivated",
-    "mastery_level_summary": "Level 3: Building foundation"
-  },
-  "chat_history": []
-}
+uvicorn app.main:app --reload
